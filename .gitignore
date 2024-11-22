@@ -1,0 +1,9 @@
+data/*
+
+node_modules/*
+
+*.bin
+
+*.geojson
+
+src/process
