@@ -1,11 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     var map = L.map('map').setView([31.300917, 121.497785], 15);
-    
+
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
+
+    const ws = new WebSocket('ws://localhost:3001');
 
     const searchInput = document.getElementById('location-search');
     const searchBtn = document.getElementById('search-btn');
@@ -17,6 +19,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchContainer = document.getElementById('search-container');
 
     let isSearchMode = true;
+
+    let routeLayer = null;
+
+    ws.onmessage = (event) => {
+        
+        const geojson = JSON.parse(event.data);
+
+        if (routeLayer) {
+            map.removeLayer(routeLayer);
+        }
+
+        routeLayer = L.geoJSON(geojson).addTo(map);
+        map.fitBounds(routeLayer.getBounds());
+    }
 
     // Function to toggle between modes
     toggleModeBtn.addEventListener('click', () => {
@@ -32,16 +48,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const result = await fetch('http://localhost:3000/static/shanghai.geojson');
         const data = await result.json();
-        
+
         // Find the Point the specified name
         for (const feature of data.features) {
             if (feature.geometry.type == 'Point' && name == feature.properties.name) {
-                res.push(feature.geometry.coordinates); 
+                res.push(feature.geometry.coordinates);
             }
-        } 
+        }
         return res;
     }
-    
+
     // Function to search for a location by name
     searchBtn.addEventListener('click', async () => {
         const locationName = searchInput.value;
@@ -57,28 +73,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to calculate and display the shortest path
     navigateBtn.addEventListener('click', async () => {
-        const startName = startInput.value;
-        const endName = endInput.value;
-        
-        const response = await fetch(`/calculate-path?start=${encodeURIComponent(startName)}&end=${encodeURIComponent(endName)}`);
-        const pathData = await response.json();
+        const startName = startInput.value.trim();
+        const endName = endInput.value.trim();
 
-        // Display the route on the map
-        if (pathData && pathData.coordinates) {
-            const pathCoords = pathData.coordinates.map(coord => [coord[1], coord[0]]);
-            L.polyline(pathCoords, { color: 'blue' }).addTo(map);
-        } else {
-            alert('Route not found.');
+        if (!startName || !endName) {
+            alert('Please enter both start and end locations!');
+            return;
         }
-    }); 
-    
+
+        try {
+            const response = await fetch('/calculate-path', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ startLocation: startName, endLocation: endName }),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message || 'Path calculation started.');
+            } else {
+                alert(`Error: ${result.error || 'Failed to calculate path.'}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while sending the request.');
+        }
+    });
+
     function onMapClick(e) {
         popup
             .setLatLng(e.latlng)
             .setContent("You clicked the map at " + e.latlng.toString())
             .openOn(map);
     }
-    
+
     map.on('click', onMapClick);
 
     var myGeoStyle = {
@@ -87,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "opacity": 0.65
     };
 
+    /*
     var geojsonMarkerOptions = {
         radius: 8,
         fillColor: "#0088aa",
@@ -102,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             layer.bindPopup(feature.properties.popupContent);
         }
     }
-    
+
     var geojsonFeature = {
         "type": "Feature",
         "properties": {
@@ -112,10 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         "geometry": {
             "type": "Point",
-            "coordinates": [121.545711,31.2855743]
+            "coordinates": [121.545711, 31.2855743]
         }
     };
-    
+
     L.geoJSON(geojsonFeature, {
         onEachFeature: onEachFeature
     }).addTo(map);
@@ -127,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => {
             console.log("GeoJSON data loaded:", data);  // 添加日志以检查数据
-            
+
             L.geoJSON(data, {
                 pointToLayer: function (feature, latlng) {
                     return L.circleMarker(latlng, geojsonMarkerOptions);
@@ -146,11 +177,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }).addTo(map);
         })
         .catch(error => console.error('Error loading GeoJSON:', error));
-    
-    
+
+
     var popup = L.popup()
         .setLatLng([31.300917, 121.497785])
         .setContent("START")
         .openOn(map);
+*/
 
 });    

@@ -20,6 +20,8 @@ using std::ifstream;
 using std::cout;
 using std::endl;
 
+const string working_path = "/home/sean/DS-PJ-Map";
+
 void saveGraph(const Graph<Node> &graph, const string &filename) {
     std::ofstream out(filename, std::ios::binary);
     graph.serialize(out);
@@ -274,7 +276,7 @@ void calculate_shortest_path_by_name(const Graph<Node> &graph, const string &sta
 
     auto path = BiAStar(graph, start, goal);
 
-    string export_path = "../public/shortest_path.geojson";
+    string export_path = working_path + "/public/shortest_path.geojson";
     export_path_to_geojson(path, export_path);
     std::cout << "Shortest path saved to shortest_path.geojson" << std::endl;
 }
@@ -283,9 +285,9 @@ int main(int argc, char *argv[])
 {
     // Load graph
     Graph<Node> graph;
-    string binaryFilename = "./graph_cache.bin";
+    string binaryFilename = working_path + "/src/graph_cache.bin";
     if (!loadGraph(graph, binaryFilename)) {
-        string data_path = "../data/shanghai-primary.geojson";
+        string data_path = working_path + "/data/shanghai-primary.geojson";
         cout << "Loading from geojson and building graph" << endl;
         load_geojson(data_path, graph);
         saveGraph(graph, binaryFilename);
