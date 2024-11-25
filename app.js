@@ -30,7 +30,20 @@ const path = require('path');
 app.use('/map', express.static(path.join(__dirname, "public")));
 
 
-const wss = new WebSocket.Server({ port: 3001 });
+const cppSocket = new WebSocket('ws://localhost:3002');
+
+// WebSocket 消息处理
+cppSocket.on('open', () => {
+  console.log('Connected to C++ WebSocket server');
+});
+
+cppSocket.on('error', (err) => {
+  console.error('WebSocket error:', err);
+});
+
+cppSocket.on('message', (message) => {
+  console.log('Received from C++:', message);
+});
 
 app.use(express.json());
 
@@ -45,31 +58,25 @@ app.post('/calculate-path', (req, res) => {
 
     console.log('Received request to calculate path from:', startLocation, 'to:', endLocation);
 
+    const request = JSON.stringify({ startLocation, endLocation });
 
-    const processFile = './src/process';
-    const args = [startLocation, endLocation];
-
-    execFile(processFile, args, (error) => {
-      if (error) {
-        console.error('Error executing process program:');
-        return res.status(500).send({ error: 'Failed to calculate path.' });
+    cppSocket.send(request, (err) => {
+      if (err) {
+        console.error('Error sending to C++ server:', err);
+        return res.status(500).send({error: 'C++ server error'})
       }
 
-      const shortestGeoJson = './public/shortest_path.geojson';
-      if (fs.existsSync(shortestGeoJson)) {
-        const geojson = fs.readFileSync(shortestGeoJson, 'utf-8');
-        wss.clients.forEach((client) => {
-          if (client.readyState == WebSocket.OPEN) {
-            client.send(geojson);
-          }
-        });
-      } else {
-        return res.status(500).send({ error: 'GeoJSON result not found.' });
-      }
-
-      // res.send({ message: 'Path calculated and updated successfully.' });
-
+      cppSocket.once('message', (message) => {
+        try {
+          const result = JSON.parse(message);
+          res.send(result);
+        } catch (error) {
+          console.error('Error parsing c++ response:', error);
+          res.status(500).send({error: 'c++ return type error'});
+        }
+      });
     });
+
   } catch (err) {
     console.error('Server error:', err);
     res.status(500).send({ error: 'An unexpected error occurred.' });

@@ -2,6 +2,7 @@
 #include "Node.h"
 #include <jsoncpp/json/json.h>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include <map>
 #include <unordered_map>
@@ -11,6 +12,8 @@
 #include <queue>
 #include <algorithm>
 #include <fstream>
+#include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/server.hpp>
 
 using std::map;
 using std::vector;
@@ -20,15 +23,20 @@ using std::ifstream;
 using std::cout;
 using std::endl;
 
-const string working_path = "/home/sean/DS-PJ-Map";
 
-void saveGraph(const Graph<Node> &graph, const string &filename) {
+typedef websocketpp::server<websocketpp::config::asio> server;
+
+const string working_path = "/home/sean/DS-PJ-Map";
+const string highway_file = working_path + "/data/shanghai-highway.geojson";
+const string point_file = working_path + "/data/shanghai-point.geojson";
+
+void saveGraph(const Graph &graph, const string &filename) {
     std::ofstream out(filename, std::ios::binary);
     graph.serialize(out);
     out.close();
 }
 
-bool loadGraph(Graph<Node> &graph, const string &filename) {
+bool loadGraph(Graph &graph, const string &filename) {
     std::ifstream in(filename, std::ios::binary);
     if (!in) {
         return false;
@@ -38,8 +46,38 @@ bool loadGraph(Graph<Node> &graph, const string &filename) {
     return true;
 }
 
-// 解析 GeoJSON 并构建图
-void load_geojson(const std::string &filename, Graph<Node> &graph)
+priority getPriorityFromString(const string &str) {
+    if (str == "motorway") {
+        return motorway;
+    } else if (str == "trunk") {
+        return trunk;
+    } else if (str == "primary") {
+        return primary;
+    } else if (str == "secondary") {
+        return secondary;
+    } else if (str == "tertiary") {
+        return tertiary;
+    } else if (str == "unclassified") {
+        return unclassified;
+    } else if (str == "residential") {
+        return residential;
+    } else if (str == "service") {
+        return service;
+    } else if (str == "track") {
+        return track;
+    } else if (str == "path") {
+        return path;
+    } else if (str == "footway") {
+        return footway;
+    } else if (str == "cycleway") {
+        return cycleway;
+    } else {
+        return unknown;
+    }
+}
+
+// add highway to graph
+void load_highway(const std::string &filename, Graph &graph)
 {
     std::ifstream file(filename);
     Json::Value geojson;
@@ -50,6 +88,7 @@ void load_geojson(const std::string &filename, Graph<Node> &graph)
         if (feature["geometry"]["type"].asString() == "LineString")
         {
             const auto &coordinates = feature["geometry"]["coordinates"];
+            const string road_cat = feature["properties"]["highway"].asString();
             for (Json::ArrayIndex i = 0; i < coordinates.size() - 1; ++i)
             {
                 double lng1 = coordinates[i][0].asDouble();
@@ -70,11 +109,21 @@ void load_geojson(const std::string &filename, Graph<Node> &graph)
                     graph.addDirectedEdge(n1, n2, distance);
                 }
             }
-        } else if (feature["geometry"]["type"].asString() == "Point" && !feature["properties"]["name"].asString().empty()) {
-            const auto &coordinate = feature["geometry"]["coordinates"];
-            double lng = coordinate[0].asDouble();
-            double lat = coordinate[1].asDouble();
-            graph.addNamePoint(feature["properties"]["name"].asString(), {lng, lat});
+        } 
+    }
+}
+
+void load_point(const string &filename, Graph &graph) {
+    std::ifstream file(filename);
+    Json::Value geojson;
+    file >> geojson;
+
+    for (const auto &feature : geojson["features"]) {
+        if (feature["geometry"]["type"].asString() == "Point" && !feature["properties"]["name"].asString().empty()) {
+            double lng = feature["geometry"]["coordinates"][0].asDouble();
+            double lat = feature["geometry"]["coordinates"][1].asDouble();
+            string name = feature["properties"]["name"].asString();
+            graph.addNamePoint(name, {lng, lat});
         }
     }
 }
@@ -91,7 +140,7 @@ std::vector<Node> reconstructPath(const std::map<Node, Node> &cameFrom, Node cur
     return path;
 }
 
-std::vector<Node> AStar(const Graph<Node> &graph, const Node &start, const Node &goal)
+std::vector<Node> AStar(const Graph &graph, const Node &start, const Node &goal)
 {
     if (!graph.containsNode(start) || !graph.containsNode(goal)) {
         throw std::runtime_error("Start or goal node not found in graph.");
@@ -153,7 +202,7 @@ std::vector<Node> constructPath(const map<Node, Node> &cameFromStart, Node &cur_
     return path;
 }
 
-std::vector<Node> BiAStar(const Graph<Node> &graph, const Node &start, const Node &goal)
+std::vector<Node> BiAStar(const Graph &graph, const Node &start, const Node &goal)
 {
     if (!graph.containsNode(start) || !graph.containsNode(goal)) {
         throw std::runtime_error("Start or goal node not found in graph.");
@@ -231,7 +280,36 @@ std::vector<Node> BiAStar(const Graph<Node> &graph, const Node &start, const Nod
 }
 
 
-		// {"type":"Feature","geometry":{"type":"Point","coordinates":[121.141005,31.2719763]}},
+void export_path_to_geojson_string(const std::vector<Node> &path, std::string &output_string) {
+    Json::Value geojson;
+    geojson["type"] = "FeatureCollection";
+    Json::Value feature;
+    feature["type"] = "Feature";
+    feature["geometry"]["type"] = "LineString";
+
+    for (const auto &node : path)
+    {
+        Json::Value coord;
+        coord.append(node.getLng());
+        coord.append(node.getLat());
+
+        Json::Value point;
+        point["type"] = "Feature";
+        point["geometry"]["type"] = "Point";
+        point["geometry"]["coordinates"] = coord;
+        // point["properties"]["popupContent"] = "coord";
+        geojson["features"].append(point);
+
+        feature["geometry"]["coordinates"].append(coord);
+    }
+
+    geojson["features"].append(feature);
+
+    std::ostringstream out;
+    out << geojson;
+
+    output_string = out.str();
+}
 
 void export_path_to_geojson(const std::vector<Node> &path, const std::string &output_filename)
 {
@@ -251,7 +329,7 @@ void export_path_to_geojson(const std::vector<Node> &path, const std::string &ou
         point["type"] = "Feature";
         point["geometry"]["type"] = "Point";
         point["geometry"]["coordinates"] = coord;
-        point["properties"]["popupContent"] = "coord";
+        // point["properties"]["popupContent"] = "coord";
         geojson["features"].append(point);
 
         feature["geometry"]["coordinates"].append(coord);
@@ -264,7 +342,7 @@ void export_path_to_geojson(const std::vector<Node> &path, const std::string &ou
     file.close();
 }
 
-void calculate_shortest_path_by_name(const Graph<Node> &graph, const string &start_name, const string &goal_name) {
+void calculate_shortest_path_by_name(const Graph &graph, const string &start_name, const string &goal_name) {
     auto start_coord = graph.queryByName(start_name);
     auto goal_coord = graph.queryByName(goal_name);
 
@@ -281,24 +359,100 @@ void calculate_shortest_path_by_name(const Graph<Node> &graph, const string &sta
     std::cout << "Shortest path saved to shortest_path.geojson" << std::endl;
 }
 
-int main(int argc, char *argv[])
-{
-    // Load graph
-    Graph<Node> graph;
+void calculate_shortest_path_by_name_to_string(const Graph &graph, const string &start_name, const string &goal_name, string &output_string) {
+    auto start_coord = graph.queryByName(start_name);
+    auto goal_coord = graph.queryByName(goal_name);
+
+    Node start(start_coord);
+    Node goal(goal_coord);
+
+    cout << start_name << ":" << start.getLat() << "," << start.getLng() << endl;
+    cout << goal_name << ":" << goal.getLat() << "," << goal.getLng() << endl;
+
+    auto path = BiAStar(graph, start, goal);
+
+    export_path_to_geojson_string(path, output_string);
+}
+
+
+
+void calculateAndRespond(const std::string& startLocation, const std::string& endLocation, websocketpp::connection_hdl hdl, server& wsServer, const Graph &graph) {
+    string result;
+    calculate_shortest_path_by_name_to_string(graph, startLocation, endLocation, result);
+    // std::cout << result << std::endl;
+    if (result.empty()) {
+        wsServer.send(hdl, "Cannot find path!", websocketpp::frame::opcode::text);
+        return;
+    }
+
+    // 发送结果
+    wsServer.send(hdl, result, websocketpp::frame::opcode::text);
+}
+
+void loadData(Graph &graph) {
     string binaryFilename = working_path + "/src/graph_cache.bin";
     if (!loadGraph(graph, binaryFilename)) {
-        string data_path = working_path + "/data/shanghai-primary.geojson";
         cout << "Loading from geojson and building graph" << endl;
-        load_geojson(data_path, graph);
+        load_highway(highway_file, graph);
+        load_point(point_file, graph);
         saveGraph(graph, binaryFilename);
     } else {
         cout << "Graph loaded from binary cache." << endl;
     }
+}
 
-    if (argc == 3) {
-        cout << "Calculating shortest path~" << endl;
-        calculate_shortest_path_by_name(graph, argv[1], argv[2]);
-    }
+void testQueryByName(const Graph &g, const string &name) {
+    auto t = g.queryByName(name);
+    cout << name << "\n" << t.first << " " << t.second << endl;
+}
+
+int main()
+{
+    // Load graph
+    Graph graph;
+    loadData(graph);
+
+    testQueryByName(graph, "同济大学");
+
+
+    // server wsServer;
+    // wsServer.init_asio();
+    // wsServer.set_message_handler([&](websocketpp::connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg) {
+    //     try {
+
+    //         // 获取 WebSocket 消息的字符串
+    //         std::string payload = msg->get_payload();
+
+    //         // 创建一个 Json::Reader 对象
+    //         Json::Reader reader;
+    //         Json::Value jsonData;
+
+    //         // 解析 JSON 数据
+    //         if (reader.parse(payload, jsonData)) {
+    //             // 访问 JSON 数据
+    //             std::string startLocation = jsonData["startLocation"].asString();
+    //             std::string endLocation = jsonData["endLocation"].asString();
+
+    //             std::cout << "Received request: " << startLocation << " -> " << endLocation << std::endl;
+
+    //             // 调用路径计算
+    //             calculateAndRespond(startLocation, endLocation, hdl, wsServer, graph);
+    //         } else {
+    //             std::cerr << "Failed to parse JSON: " << reader.getFormattedErrorMessages() << std::endl;
+    //         }
+    //     } catch (const std::exception& e) {
+    //         wsServer.send(hdl, std::string("Error: ") + e.what(), websocketpp::frame::opcode::text);
+    //     }
+    // });
+
+    // wsServer.listen(3002);
+    // wsServer.start_accept();
+
+    // std::cout << "C++ WebSocket server listening on port 3002..." << std::endl;
+
+    // wsServer.run();
+
+
 
     return 0;
 }

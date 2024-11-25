@@ -7,8 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
 
-    const ws = new WebSocket('ws://localhost:3001');
-
+    
     const searchInput = document.getElementById('location-search');
     const searchBtn = document.getElementById('search-btn');
     const startInput = document.getElementById('start-point');
@@ -20,17 +19,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isSearchMode = true;
 
+
     let routeLayer = null;
 
-    ws.onmessage = (event) => {
-        
-        const geojson = JSON.parse(event.data);
+    function updateMap(geojson) {
 
         if (routeLayer) {
             map.removeLayer(routeLayer);
         }
 
-        routeLayer = L.geoJSON(geojson).addTo(map);
+        routeLayer = L.geoJSON(geojson, {
+            style: function (feature) {
+                return {
+                    color: "#7800ff",
+                    weight: 3
+                };
+            }
+        }).addTo(map);
         map.fitBounds(routeLayer.getBounds());
     }
 
@@ -93,9 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             if (response.ok) {
                 alert(result.message || 'Path calculation started.');
+                console.log('Calculate result:', result);
+                updateMap(result);
             } else {
                 alert(`Error: ${result.error || 'Failed to calculate path.'}`);
             }
+
         } catch (error) {
             console.error('Error:', error);
             alert('An error occurred while sending the request.');
@@ -111,11 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     map.on('click', onMapClick);
 
-    var myGeoStyle = {
-        "color": "#ff7800",
-        "weight": 10,
-        "opacity": 0.65
-    };
+    
 
     /*
     var geojsonMarkerOptions = {

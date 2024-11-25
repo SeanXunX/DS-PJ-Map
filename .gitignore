@@ -1,9 +1,11 @@
-data/*
+data
 
-node_modules/*
+node_modules
 
 *.bin
 
 *.geojson
 
 src/process
+
+.vscode
