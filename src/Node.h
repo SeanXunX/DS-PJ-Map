@@ -43,7 +43,7 @@ public:
     // TODO: change to hashmap or a better comparison method
     bool operator<(const Node &other) const{
         // return ((this->lat * 114) + (this->lng)) < (other.lat * 114 + other.lng);
-        return std::tie(lng, lat, weight) < std::tie(other.lng, other.lat, weight);
+        return std::tie(lng, lat, weight) < std::tie(other.lng, other.lat, other.weight);
     }
 
     void serialize(std::ofstream &out) const;

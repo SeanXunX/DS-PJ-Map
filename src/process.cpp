@@ -28,7 +28,7 @@ typedef websocketpp::server<websocketpp::config::asio> server;
 
 const string working_path = "/home/sean/DS-PJ-Map";
 const string highway_file = working_path + "/data/shanghai-highway.geojson";
-const string point_file = working_path + "/data/shanghai-point.geojson";
+const string point_file = working_path + "/data/shanghai.geojson";
 
 void saveGraph(const Graph &graph, const string &filename) {
     std::ofstream out(filename, std::ios::binary);
@@ -412,45 +412,45 @@ int main()
     Graph graph;
     loadData(graph);
 
-    testQueryByName(graph, "同济大学");
+    // testQueryByName(graph, "同济大学");
 
 
-    // server wsServer;
-    // wsServer.init_asio();
-    // wsServer.set_message_handler([&](websocketpp::connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg) {
-    //     try {
+    server wsServer;
+    wsServer.init_asio();
+    wsServer.set_message_handler([&](websocketpp::connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg) {
+        try {
 
-    //         // 获取 WebSocket 消息的字符串
-    //         std::string payload = msg->get_payload();
+            // 获取 WebSocket 消息的字符串
+            std::string payload = msg->get_payload();
 
-    //         // 创建一个 Json::Reader 对象
-    //         Json::Reader reader;
-    //         Json::Value jsonData;
+            // 创建一个 Json::Reader 对象
+            Json::Reader reader;
+            Json::Value jsonData;
 
-    //         // 解析 JSON 数据
-    //         if (reader.parse(payload, jsonData)) {
-    //             // 访问 JSON 数据
-    //             std::string startLocation = jsonData["startLocation"].asString();
-    //             std::string endLocation = jsonData["endLocation"].asString();
+            // 解析 JSON 数据
+            if (reader.parse(payload, jsonData)) {
+                // 访问 JSON 数据
+                std::string startLocation = jsonData["startLocation"].asString();
+                std::string endLocation = jsonData["endLocation"].asString();
 
-    //             std::cout << "Received request: " << startLocation << " -> " << endLocation << std::endl;
+                std::cout << "Received request: " << startLocation << " -> " << endLocation << std::endl;
 
-    //             // 调用路径计算
-    //             calculateAndRespond(startLocation, endLocation, hdl, wsServer, graph);
-    //         } else {
-    //             std::cerr << "Failed to parse JSON: " << reader.getFormattedErrorMessages() << std::endl;
-    //         }
-    //     } catch (const std::exception& e) {
-    //         wsServer.send(hdl, std::string("Error: ") + e.what(), websocketpp::frame::opcode::text);
-    //     }
-    // });
+                // 调用路径计算
+                calculateAndRespond(startLocation, endLocation, hdl, wsServer, graph);
+            } else {
+                std::cerr << "Failed to parse JSON: " << reader.getFormattedErrorMessages() << std::endl;
+            }
+        } catch (const std::exception& e) {
+            wsServer.send(hdl, std::string("Error: ") + e.what(), websocketpp::frame::opcode::text);
+        }
+    });
 
-    // wsServer.listen(3002);
-    // wsServer.start_accept();
+    wsServer.listen(3002);
+    wsServer.start_accept();
 
-    // std::cout << "C++ WebSocket server listening on port 3002..." << std::endl;
+    std::cout << "C++ WebSocket server listening on port 3002..." << std::endl;
 
-    // wsServer.run();
+    wsServer.run();
 
 
 

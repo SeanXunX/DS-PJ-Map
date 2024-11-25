@@ -6,10 +6,8 @@ LFLAGS = -ljsoncpp -lboost_system -lpthread
 TARGET = ./process
 BIN = ./*.bin
 
-start: $(TARGET) 
+start: release 
 	$(TARGET)
-
-$(TARGET):release
 
 release:
 	g++ *.cpp -Wall -Wextra -O2 -I/usr/include/ -L/usr/lib/x86_64-linux-gnu/ $(LFLAGS) -o process
@@ -18,7 +16,7 @@ debug:
 	g++ *.cpp -Wall -Wextra -O0 -I/usr/include/ -L/usr/lib/x86_64-linux-gnu/ $(LFLAGS) -o process -g
 
 cleanp:
-	rm ./process
+	-rm ./process
 
 cleanall:
-	rm ./process ./*.bin 
+	-rm ./process ./*.bin 
