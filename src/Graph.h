@@ -55,15 +55,7 @@ public:
     void deserialize(std::ifstream &in);
 
     std::pair<double, double> queryByName(const std::string &name) const {
-
-        //todo:delete
-        std::cout << "query ByName first map" << std::endl;
-
         auto &[lng, lat] = location_map.at(name); 
-
-        //todo:delete
-        std::cout << "After first map" << std::endl;
-
         std::array<double, 2> data = {lng, lat};
         auto res_kd_node = kdtree.nearest_neighbor(KDNode(data));
         double llng = res_kd_node.data[0], llat = res_kd_node.data[1];

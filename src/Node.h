@@ -6,7 +6,7 @@
 
 enum priority {
     unknown = 0,
-    motorway = 80,
+    motorway = 70,
     trunk = 100,
     primary = 120,
     secondary = 150,
@@ -43,7 +43,7 @@ public:
     // TODO: change to hashmap or a better comparison method
     bool operator<(const Node &other) const{
         // return ((this->lat * 114) + (this->lng)) < (other.lat * 114 + other.lng);
-        return std::tie(lng, lat, weight) < std::tie(other.lng, other.lat, other.weight);
+        return std::tie(lng, lat) < std::tie(other.lng, other.lat);
     }
 
     void serialize(std::ofstream &out) const;

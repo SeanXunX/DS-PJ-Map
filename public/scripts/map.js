@@ -97,8 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await response.json();
             if (response.ok) {
-                alert(result.message || 'Path calculation started.');
-                console.log('Calculate result:', result);
+                // alert(result.message || 'Path calculation started.');
+                // console.log('Calculate result:', result);
                 updateMap(result);
             } else {
                 alert(`Error: ${result.error || 'Failed to calculate path.'}`);

@@ -47,7 +47,7 @@ bool loadGraph(Graph &graph, const string &filename) {
 }
 
 priority getPriorityFromString(const string &str) {
-    if (str == "motorway") {
+    if (str == "motorway_junction") {
         return motorway;
     } else if (str == "trunk") {
         return trunk;
@@ -96,7 +96,7 @@ void load_highway(const std::string &filename, Graph &graph)
                 double lng2 = coordinates[i + 1][0].asDouble();
                 double lat2 = coordinates[i + 1][1].asDouble();
 
-                Node n1(lng1, lat1), n2(lng2, lat2);
+                Node n1(lng1, lat1, getPriorityFromString(road_cat)), n2(lng2, lat2, getPriorityFromString(road_cat));
 
                 graph.addNode(n1);
                 graph.addNode2KDTree(n1);
@@ -105,7 +105,7 @@ void load_highway(const std::string &filename, Graph &graph)
 
                 if (!graph.getNeighbors(n1).count(n2))
                 {
-                    double distance = calculate_distance(lng1, lat1, lng2, lat2);
+                    double distance = calculate_weighted_distance(n1, n2);
                     graph.addDirectedEdge(n1, n2, distance);
                 }
             }
@@ -293,12 +293,12 @@ void export_path_to_geojson_string(const std::vector<Node> &path, std::string &o
         coord.append(node.getLng());
         coord.append(node.getLat());
 
-        Json::Value point;
-        point["type"] = "Feature";
-        point["geometry"]["type"] = "Point";
-        point["geometry"]["coordinates"] = coord;
+        // Json::Value point;
+        // point["type"] = "Feature";
+        // point["geometry"]["type"] = "Point";
+        // point["geometry"]["coordinates"] = coord;
         // point["properties"]["popupContent"] = "coord";
-        geojson["features"].append(point);
+        // geojson["features"].append(point);
 
         feature["geometry"]["coordinates"].append(coord);
     }
@@ -325,12 +325,12 @@ void export_path_to_geojson(const std::vector<Node> &path, const std::string &ou
         coord.append(node.getLng());
         coord.append(node.getLat());
 
-        Json::Value point;
-        point["type"] = "Feature";
-        point["geometry"]["type"] = "Point";
-        point["geometry"]["coordinates"] = coord;
+        // Json::Value point;
+        // point["type"] = "Feature";
+        // point["geometry"]["type"] = "Point";
+        // point["geometry"]["coordinates"] = coord;
         // point["properties"]["popupContent"] = "coord";
-        geojson["features"].append(point);
+        // geojson["features"].append(point);
 
         feature["geometry"]["coordinates"].append(coord);
     }

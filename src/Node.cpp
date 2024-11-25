@@ -37,7 +37,7 @@ double calculate_weighted_distance(const Node& node1, const Node &node2) {
 }
 
 bool operator==(const Node &n1, const Node &n2) {
-    return n1.lat == n2.lat && n1.lng == n2.lng && n1.weight == n2.weight;
+    return n1.lat == n2.lat && n1.lng == n2.lng ;
 }
 
 void Node::serialize(std::ofstream &out) const
