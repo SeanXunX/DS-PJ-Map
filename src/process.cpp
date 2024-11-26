@@ -248,6 +248,7 @@ std::vector<Node> BiAStar(const Graph &graph, const Node &start, const Node &goa
             }
             for (const Node &neighbor : graph.getNeighbors(current_start)) {
                 double t = gScoreStart[current_start] + graph.distances.at({current_start, neighbor});
+                // double t = gScoreStart[current_start] + calculate_weighted_distance(current_start, neighbor);
                 if (t < gScoreStart[neighbor]) {
                     cameFromStart[neighbor] = current_start;
                     gScoreStart[neighbor] = t;
@@ -265,6 +266,7 @@ std::vector<Node> BiAStar(const Graph &graph, const Node &start, const Node &goa
             }
             for (const Node &neighbor : graph.rev_getNeighbors(current_goal)) {
                 double t = gScoreGoal[current_goal] + graph.distances.at({neighbor, current_goal});
+                // double t = gScoreStart[current_start] + calculate_weighted_distance(neighbor, current_goal);
                 if (t < gScoreGoal[neighbor]) {
                     cameFromGoal[neighbor] = current_goal;
                     gScoreGoal[neighbor] = t;
@@ -402,7 +404,7 @@ void loadData(Graph &graph) {
 }
 
 void performFuzzyQuery(const std::string& locationName, websocketpp::connection_hdl hdl, server& wsServer, const Graph &graph) {
-    auto locations = graph.fuzzySearch(locationName, 75.0);
+    auto locations = graph.fuzzySearch(locationName, 80.0, 10);
     Json::Value result(Json::arrayValue);
 
     for (const auto &location : locations) {

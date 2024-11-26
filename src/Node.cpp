@@ -4,6 +4,8 @@
 
 const double pi = M_PI, R = 6371000;
 
+const double bonus = 0.8, punish = 1.25;
+
 
 double rad(double d)
 {
@@ -27,11 +29,17 @@ double calculate_distance(const Node& node1, const Node &node2) {
 }
 
 double calculate_weighted_distance(const Node& node1, const Node &node2) {
-    double w;
+    double w = 1;
     if (node1.weight == unknown && node2.weight == unknown) {
         w = 1;
     } else {
         w = static_cast<double>(std::max(node1.weight, node2.weight)) / 100.0;
+        // node1 -> node2
+        if (node1.weight > node2.weight) {
+            w *= bonus;
+        } else if (node1.weight < node2.weight) {
+            w *= punish;
+        }
     }
     return calculate_distance(node1.lng, node1.lat, node2.lng, node2.lat) * w;
 }

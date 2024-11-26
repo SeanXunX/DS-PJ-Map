@@ -73,7 +73,7 @@ public:
         location_map[name] = coord;
     }
 
-    std::vector<std::string> fuzzySearch(const std::string &query, double threshold) const;
+    std::vector<std::string> fuzzySearch(const std::string &query, double threshold,  std::multimap<double, std::string>::size_type max_size) const;
     
 private:
     std::map<Node, std::set<Node>> adjList;  

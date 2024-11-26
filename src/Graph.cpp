@@ -1,6 +1,8 @@
 #include "Graph.h"
 
 #include <rapidfuzz/fuzz.hpp>
+#include <map>
+#include <algorithm>
 
 using std::string;
 using std::vector;
@@ -130,14 +132,28 @@ void Graph::deserialize(std::ifstream &in) {
     kdtree.deserialize(in);
 }
 
-std::vector<std::string> Graph::fuzzySearch(const std::string &query, double threshold) const
+std::vector<string> Graph::fuzzySearch(const std::string &query, double threshold,  std::multimap<double, std::string>::size_type max_size) const
 {
-    vector<string> res;
+    std::multimap<double, string> res;
     for (const auto &entry : location_map) {
         double score = rapidfuzz::fuzz::ratio(query, entry.first);
-        if (score >= threshold) {
-            res.push_back(entry.first);
+        if (query.size() <= entry.first.size()) {
+            double partial_score = rapidfuzz::fuzz::partial_ratio(query, entry.first);
+            score = std::max(score, partial_score);
+        }
+        if (query == entry.first) {
+            score = 200;
+        }
+        if (res.size() < max_size) {
+            res.insert({score, entry.first});
+        } else if (score >= threshold && score > res.begin()->first) {
+            res.erase(res.begin());
+            res.insert({score, entry.first});
         }
     }
-    return res;
+    vector<string> result;
+    for (auto itr = res.rbegin(); itr != res.rend(); ++itr) {
+        result.push_back(itr->second);
+    }
+    return result;
 }
