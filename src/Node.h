@@ -6,7 +6,7 @@
 
 enum priority {
     unknown = 0,
-    motorway = 70,
+    motorway = 80,
     trunk = 100,
     primary = 120,
     secondary = 150,

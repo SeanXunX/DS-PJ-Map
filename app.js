@@ -29,6 +29,8 @@ app.listen(port, () => {
 const path = require('path');
 app.use('/map', express.static(path.join(__dirname, "public")));
 
+// app.use(express.static('public'));
+
 
 const cppSocket = new WebSocket('ws://localhost:3002');
 
@@ -58,7 +60,7 @@ app.post('/calculate-path', (req, res) => {
 
     console.log('Received request to calculate path from:', startLocation, 'to:', endLocation);
 
-    const request = JSON.stringify({ startLocation, endLocation });
+    const request = JSON.stringify({ queryType: 'path', startLocation, endLocation });
 
     cppSocket.send(request, (err) => {
       if (err) {
@@ -77,6 +79,41 @@ app.post('/calculate-path', (req, res) => {
       });
     });
 
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).send({ error: 'An unexpected error occurred.' });
+  }
+});
+
+app.post('/fuzzy-search', (req, res) => {
+  try {
+    const { locationName } = req.body;
+
+    if (!locationName) {
+      return res.status(400).send({ error: 'Location name required' });
+    }
+
+    console.log('Received fuzzy search request for:', locationName);
+
+    // 准备 WebSocket 请求
+    const request = JSON.stringify({ queryType: 'fuzzy', locationName });
+
+    cppSocket.send(request, (err) => {
+      if (err) {
+        console.error('Error sending to C++ server:', err);
+        return res.status(500).send({ error: 'C++ server error' });
+      }
+
+      cppSocket.once('message', (message) => {
+        try {
+          const results = JSON.parse(message);
+          res.send(results);
+        } catch (error) {
+          console.error('Error parsing C++ response:', error);
+          res.status(500).send({ error: 'C++ response parse error' });
+        }
+      });
+    });
   } catch (err) {
     console.error('Server error:', err);
     res.status(500).send({ error: 'An unexpected error occurred.' });

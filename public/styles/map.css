@@ -1,56 +1,101 @@
+/* 确保 map 高度 */
 #map {
-    height: 1000px;
+    height: 100vh; /* 全屏高度 */
+    z-index: 10;
 }
 
-#search-container, #nav-container {
+/* 确保 body 的样式 */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+    position: relative; /* 为绝对定位元素提供参照 */
+}
+
+/* 搜索框容器的样式 */
+.search-container {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: white;
-    padding: 5px;
-    border-radius: 5px;
-    z-index: 1000;
+    top: 10px; /* 距离顶部10px */
+    left: 50px; /* 距离左侧10px */
+    width: 300px; /* 搜索框宽度 */
+    z-index: 100; /* 显示在地图之上 */
 }
 
-#toggle-mode-btn {
-    position: absolute;
-    top: 50px;
-    left: 10px;
-    z-index: 1000;
+.search-container:nth-child(2) {
+    top: 60px; /* 第二个框距离顶部60px */
+    z-index: 90;
 }
 
-/* Modal styling */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
+/* 搜索输入框的样式 */
+.search-input {
+    position: relative;
     width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: rgb(255, 255, 255);
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box; /* 确保 padding 不会影响宽度 */
+    z-index: 100;
 }
 
-.modal-content {
-    background-color: white;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
+
+/* 搜索结果的样式 */
+.search-results {
+    position: relative;
+    top: 100%; /* 紧贴输入框底部 */
+    left: 0;
+    width: 100%;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 400;
 }
 
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-    color: black;
-    text-decoration: none;
+/* 搜索结果项的样式 */
+.search-result-item {
+    position: relative;
+    padding: 10px;
     cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    z-index: 400;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background: #f4f4f9;
+}
+
+.no-results {
+    position: relative;
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    z-index: 400;
+}
+
+/* 导航按钮样式 */
+#nav-btn {
+    position: absolute;
+    top: 110px; /* 在搜索框下方 */
+    left: 50px;
+    padding: 10px 20px;
+    background-color: #3449c0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 50;
+}
+
+#nav-btn:hover {
+    background-color: #2a3a99;
 }

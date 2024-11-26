@@ -401,9 +401,18 @@ void loadData(Graph &graph) {
     }
 }
 
-void testQueryByName(const Graph &g, const string &name) {
-    auto t = g.queryByName(name);
-    cout << name << "\n" << t.first << " " << t.second << endl;
+void performFuzzyQuery(const std::string& locationName, websocketpp::connection_hdl hdl, server& wsServer, const Graph &graph) {
+    auto locations = graph.fuzzySearch(locationName, 75.0);
+    Json::Value result(Json::arrayValue);
+
+    for (const auto &location : locations) {
+        result.append(location);
+    }
+
+    Json::FastWriter writer;
+    std::string response = writer.write(result);
+
+    wsServer.send(hdl, response, websocketpp::frame::opcode::text);
 }
 
 int main()
@@ -412,31 +421,32 @@ int main()
     Graph graph;
     loadData(graph);
 
-    // testQueryByName(graph, "同济大学");
-
 
     server wsServer;
     wsServer.init_asio();
+    
     wsServer.set_message_handler([&](websocketpp::connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr msg) {
         try {
-
-            // 获取 WebSocket 消息的字符串
             std::string payload = msg->get_payload();
-
-            // 创建一个 Json::Reader 对象
             Json::Reader reader;
             Json::Value jsonData;
 
-            // 解析 JSON 数据
             if (reader.parse(payload, jsonData)) {
-                // 访问 JSON 数据
-                std::string startLocation = jsonData["startLocation"].asString();
-                std::string endLocation = jsonData["endLocation"].asString();
+                std::string queryType = jsonData["queryType"].asString();
+                
+                if (queryType == "path") {
+                    std::string startLocation = jsonData["startLocation"].asString();
+                    std::string endLocation = jsonData["endLocation"].asString();
 
-                std::cout << "Received request: " << startLocation << " -> " << endLocation << std::endl;
+                    std::cout << "Path query: " << startLocation << " -> " << endLocation << std::endl;
+                    calculateAndRespond(startLocation, endLocation, hdl, wsServer, graph);
 
-                // 调用路径计算
-                calculateAndRespond(startLocation, endLocation, hdl, wsServer, graph);
+                } else if (queryType == "fuzzy") {
+                    std::string locationName = jsonData["locationName"].asString();
+
+                    std::cout << "Fuzzy query: " << locationName << std::endl;
+                    performFuzzyQuery(locationName, hdl, wsServer, graph); // Implement this function to return fuzzy matches
+                }
             } else {
                 std::cerr << "Failed to parse JSON: " << reader.getFormattedErrorMessages() << std::endl;
             }

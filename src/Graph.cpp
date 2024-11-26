@@ -1,5 +1,10 @@
 #include "Graph.h"
 
+#include <rapidfuzz/fuzz.hpp>
+
+using std::string;
+using std::vector;
+
 void Graph::serialize(std::ofstream &out) const {
     // serialize rev_adjacent list
     size_t rev_adjCount = rev_adjList.size();
@@ -123,4 +128,16 @@ void Graph::deserialize(std::ifstream &in) {
     }
 
     kdtree.deserialize(in);
+}
+
+std::vector<std::string> Graph::fuzzySearch(const std::string &query, double threshold) const
+{
+    vector<string> res;
+    for (const auto &entry : location_map) {
+        double score = rapidfuzz::fuzz::ratio(query, entry.first);
+        if (score >= threshold) {
+            res.push_back(entry.first);
+        }
+    }
+    return res;
 }

@@ -72,6 +72,8 @@ public:
     void addNamePoint(const std::string &name, const std::pair<double, double> &coord) {
         location_map[name] = coord;
     }
+
+    std::vector<std::string> fuzzySearch(const std::string &query, double threshold) const;
     
 private:
     std::map<Node, std::set<Node>> adjList;  
