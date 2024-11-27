@@ -392,7 +392,7 @@ void calculateAndRespond(const std::string& startLocation, const std::string& en
 }
 
 void loadData(Graph &graph) {
-    string binaryFilename = working_path + "/src/graph_cache.bin";
+    string binaryFilename = working_path + "/bin/graph_cache.bin";
     if (!loadGraph(graph, binaryFilename)) {
         cout << "Loading from geojson and building graph" << endl;
         load_highway(highway_file, graph);

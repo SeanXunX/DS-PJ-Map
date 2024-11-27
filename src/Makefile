@@ -2,7 +2,7 @@
 OUTPUT_DATA = ../public/shortest_path.geojson
 CXX = g++
 FLAGS = -Wall -Wextra -O2
-LFLAGS = -ljsoncpp -lboost_system -lpthread
+LFLAGS = -ljsoncpp -lboost_system -lpthread 
 TARGET = ./process
 BIN = ./*.bin
 
