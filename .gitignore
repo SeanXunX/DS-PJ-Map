@@ -6,6 +6,8 @@ node_modules
 
 *.geojson
 
-src/process
-
 .vscode
+
+build
+
+bin
