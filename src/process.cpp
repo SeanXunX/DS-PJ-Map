@@ -85,7 +85,7 @@ void load_highway(const std::string &filename, Graph &graph)
 
     for (const auto &feature : geojson["features"])
     {
-        if (feature["geometry"]["type"].asString() == "LineString")
+        if (feature["geometry"]["type"].asString() == "LineString" && !feature["properties"]["highway"].isNull())
         {
             const auto &coordinates = feature["geometry"]["coordinates"];
             const string road_cat = feature["properties"]["highway"].asString();
@@ -122,6 +122,13 @@ void load_point(const string &filename, Graph &graph) {
         if (feature["geometry"]["type"].asString() == "Point" && !feature["properties"]["name"].asString().empty()) {
             double lng = feature["geometry"]["coordinates"][0].asDouble();
             double lat = feature["geometry"]["coordinates"][1].asDouble();
+            string name = feature["properties"]["name"].asString();
+            graph.addNamePoint(name, {lng, lat});
+        } else if (feature["geometry"]["type"].asString() == "MultiPolygon"
+         && !feature["properties"]["name"].asString().empty()
+         && !graph.location_mapContains(feature["properties"]["name"].asString())) {
+            double lng = feature["geometry"]["coordinates"][0][0][0][0].asDouble();
+            double lat = feature["geometry"]["coordinates"][0][0][0][1].asDouble();
             string name = feature["properties"]["name"].asString();
             graph.addNamePoint(name, {lng, lat});
         }
@@ -397,7 +404,7 @@ void calculateAndRespond(const std::string& startLocation, const std::string& en
 
 
 void performFuzzyQuery(const std::string& locationName, websocketpp::connection_hdl hdl, server& wsServer, const Graph &graph) {
-    auto locations = graph.fuzzySearch(locationName, 80.0, 10);
+    auto locations = graph.fuzzySearch(locationName, 75.0, 20);
     Json::Value result(Json::arrayValue);
 
     for (const auto &location : locations) {

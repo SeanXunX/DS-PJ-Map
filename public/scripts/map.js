@@ -142,21 +142,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let startPoint = null;
   let endPoint = null;
+  
+  let startMarker = null;
+  let endMarker = null;
+
 
   map.on('contextmenu', async function (e) {
     if (startPoint && endPoint) {
       startPoint = null;
       endPoint = null;
+      startMarker.remove();
+      endMarker.remove();
     }
     // 如果起点未选择，选择为起点
     if (!startPoint) {
       startPoint = e.latlng;
-      L.marker(startPoint).addTo(map).bindPopup("Start Point").openPopup();
+      startMarker = L.marker(startPoint).addTo(map).bindPopup("Start Point").openPopup();
+      
     }
     // 如果起点已选择，选择为终点
     else if (!endPoint) {
       endPoint = e.latlng;
-      L.marker(endPoint).addTo(map).bindPopup("End Point").openPopup();
+      endMarker = L.marker(endPoint).addTo(map).bindPopup("End Point").openPopup();
 
 
       try {

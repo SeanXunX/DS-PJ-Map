@@ -74,6 +74,10 @@ public:
     }
 
     std::vector<std::string> fuzzySearch(const std::string &query, double threshold,  std::multimap<double, std::string>::size_type max_size) const;
+
+    inline bool location_mapContains(const std::string &name) {
+        return location_map.count(name);
+    }
     
 private:
     std::map<Node, std::set<Node>> adjList;  
