@@ -27,6 +27,7 @@ app.listen(port, () => {
 });
 
 const path = require('path');
+const { error } = require('console');
 app.use('/map', express.static(path.join(__dirname, "public")));
 
 // app.use(express.static('public'));
@@ -114,6 +115,45 @@ app.post('/fuzzy-search', (req, res) => {
         }
       });
     });
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).send({ error: 'An unexpected error occurred.' });
+  }
+});
+
+app.post('/calculate-route-arbitrary', (req, res) => {
+  try {
+    const { start, end } = req.body;
+
+    if (!start || !end || start.length !== 2 || end.length !== 2) {
+      return res.status(400).send({ error: 'Start and end coordinates are required and must be valid' });
+    }
+
+    console.log('Received request to calculate path from:', start, 'to:', end);
+
+    const request = JSON.stringify({
+      queryType: 'arbitrary',
+      startLocation: { lat: start[0], lng: start[1] },
+      endLocation: { lat: end[0], lng: end[1] }
+    });
+
+    cppSocket.send(request, (err) => {
+      if (err) {
+        console.error('Error sending to C++ server:', err);
+        return res.status(500).send({error: 'C++ server error'})
+      }
+
+      cppSocket.once('message', (message) => {
+        try {
+          const result = JSON.parse(message);
+          res.send(result);
+        } catch (error) {
+          console.error('Error parsing c++ response:', error);
+          res.status(500).send({error: 'c++ return type error'});
+        }
+      });
+    });
+
   } catch (err) {
     console.error('Server error:', err);
     res.status(500).send({ error: 'An unexpected error occurred.' });

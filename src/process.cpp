@@ -361,6 +361,9 @@ void calculate_shortest_path_by_name(const Graph &graph, const string &start_nam
     std::cout << "Shortest path saved to shortest_path.geojson" << std::endl;
 }
 
+/**
+ * Return the geojson result to output_string for websocket transmission.
+ */
 void calculate_shortest_path_by_name_to_string(const Graph &graph, const string &start_name, const string &goal_name, string &output_string) {
     auto start_coord = graph.queryByName(start_name);
     auto goal_coord = graph.queryByName(goal_name);
@@ -391,17 +394,7 @@ void calculateAndRespond(const std::string& startLocation, const std::string& en
     wsServer.send(hdl, result, websocketpp::frame::opcode::text);
 }
 
-void loadData(Graph &graph) {
-    string binaryFilename = working_path + "/bin/graph_cache.bin";
-    if (!loadGraph(graph, binaryFilename)) {
-        cout << "Loading from geojson and building graph" << endl;
-        load_highway(highway_file, graph);
-        load_point(point_file, graph);
-        saveGraph(graph, binaryFilename);
-    } else {
-        cout << "Graph loaded from binary cache." << endl;
-    }
-}
+
 
 void performFuzzyQuery(const std::string& locationName, websocketpp::connection_hdl hdl, server& wsServer, const Graph &graph) {
     auto locations = graph.fuzzySearch(locationName, 80.0, 10);
@@ -415,6 +408,35 @@ void performFuzzyQuery(const std::string& locationName, websocketpp::connection_
     std::string response = writer.write(result);
 
     wsServer.send(hdl, response, websocketpp::frame::opcode::text);
+}
+
+void performArbitrary(double startLat, double startLng, double endLat, double endLng, websocketpp::connection_hdl hdl, server& wsServer, const Graph &graph) {
+    auto start_coord = graph.queryByArbitrary({startLng, startLat});
+    auto end_coord = graph.queryByArbitrary({endLng, endLat});
+
+    Node start(start_coord);
+    Node end(end_coord);
+
+    cout << start.getLat() << "," << start.getLng() << endl;
+    cout << end.getLat() << "," << end.getLng() << endl;
+
+    auto path = BiAStar(graph, start, end);
+
+    string result;
+    export_path_to_geojson_string(path, result);
+    wsServer.send(hdl, result, websocketpp::frame::opcode::text);
+}
+
+void loadData(Graph &graph) {
+    string binaryFilename = working_path + "/bin/graph_cache.bin";
+    if (!loadGraph(graph, binaryFilename)) {
+        cout << "Loading from geojson and building graph" << endl;
+        load_highway(highway_file, graph);
+        load_point(point_file, graph);
+        saveGraph(graph, binaryFilename);
+    } else {
+        cout << "Graph loaded from binary cache." << endl;
+    }
 }
 
 int main()
@@ -448,6 +470,13 @@ int main()
 
                     std::cout << "Fuzzy query: " << locationName << std::endl;
                     performFuzzyQuery(locationName, hdl, wsServer, graph); // Implement this function to return fuzzy matches
+                } else if (queryType == "arbitrary") {
+                    double startLat = jsonData["startLocation"]["lat"].asDouble();
+                    double startLng = jsonData["startLocation"]["lng"].asDouble();
+                    double endLat = jsonData["endLocation"]["lat"].asDouble();
+                    double endLng = jsonData["endLocation"]["lng"].asDouble();
+                    std::cout << "Arbitrary two points:" << startLat << "," << startLng << "->" << endLat << "," << endLng << std::endl;
+                    performArbitrary(startLat, startLng, endLat, endLng, hdl, wsServer, graph);
                 }
             } else {
                 std::cerr << "Failed to parse JSON: " << reader.getFormattedErrorMessages() << std::endl;
