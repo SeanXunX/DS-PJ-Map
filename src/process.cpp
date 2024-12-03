@@ -76,6 +76,13 @@ priority getPriorityFromString(const string &str) {
     }
 }
 
+inline bool isOneWay(const Json::Value &feature) {
+    if (!feature["properties"]["oneway"].isNull() && feature["properties"]["oneway"].asString() == "yes") {
+        return true;
+    }
+    return false;
+}
+
 // add highway to graph
 void load_highway(const std::string &filename, Graph &graph)
 {
@@ -89,6 +96,7 @@ void load_highway(const std::string &filename, Graph &graph)
         {
             const auto &coordinates = feature["geometry"]["coordinates"];
             const string road_cat = feature["properties"]["highway"].asString();
+            bool is_one_way = isOneWay(feature);
             for (Json::ArrayIndex i = 0; i < coordinates.size() - 1; ++i)
             {
                 double lng1 = coordinates[i][0].asDouble();
@@ -107,6 +115,10 @@ void load_highway(const std::string &filename, Graph &graph)
                 {
                     double distance = calculate_weighted_distance(n1, n2);
                     graph.addDirectedEdge(n1, n2, distance);
+                }
+                if (!is_one_way && !graph.getNeighbors(n2).count(n1)) {
+                    double distance = calculate_weighted_distance(n2, n1);
+                    graph.addDirectedEdge(n2, n1, distance);
                 }
             }
         } 
