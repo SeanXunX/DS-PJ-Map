@@ -147,159 +147,6 @@ void load_point(const string &filename, Graph &graph) {
     }
 }
 
-std::vector<Node> reconstructPath(const std::map<Node, Node> &cameFrom, Node current)
-{
-    std::vector<Node> path;
-    while (cameFrom.find(current) != cameFrom.end()) {
-        path.push_back(current);
-        current = cameFrom.at(current);
-    }
-    path.push_back(current);
-    std::reverse(path.begin(), path.end());
-    return path;
-}
-
-std::vector<Node> AStar(const Graph &graph, const Node &start, const Node &goal)
-{
-    if (!graph.containsNode(start) || !graph.containsNode(goal)) {
-        throw std::runtime_error("Start or goal node not found in graph.");
-    }
-
-    // Priority queue for A* search
-    using QueueItem = std::pair<double, Node>;
-    std::priority_queue<QueueItem, std::vector<QueueItem>, std::greater<>> openSet;
-    openSet.push({0, start});
-
-    std::map<Node, Node> cameFrom;
-    std::map<Node, double> gScore;
-    std::map<Node, double> fScore;
-
-    for (const auto &node : graph.adjList) {
-        gScore[node.first] = std::numeric_limits<double>::infinity();
-        fScore[node.first] = std::numeric_limits<double>::infinity();
-    }
-
-    gScore[start] = 0;
-    fScore[start] = calculate_distance(start, goal);
-
-    while (!openSet.empty()) {
-        Node current = openSet.top().second;
-        openSet.pop();
-
-        if (current == goal) {
-            return reconstructPath(cameFrom, current);
-        }
-
-        for (const Node &neighbor : graph.getNeighbors(current)) {
-            double tentative_gScore = gScore[current] + graph.distances.at({current, neighbor});
-            if (tentative_gScore < gScore[neighbor]) {
-                cameFrom[neighbor] = current;
-                gScore[neighbor] = tentative_gScore;
-                fScore[neighbor] = gScore[neighbor] + calculate_distance(neighbor, goal);
-                openSet.push({fScore[neighbor], neighbor});
-            }
-        }
-    }
-
-    // Return an empty path if no path found
-    return {};
-}
-
-std::vector<Node> constructPath(const map<Node, Node> &cameFromStart, Node &cur_start, const map<Node, Node> &cameFromGoal, Node &cur_goal) {
-    vector<Node> path;
-    while (cameFromStart.find(cur_start) != cameFromStart.end()) {
-        path.push_back(cur_start);
-        cur_start = cameFromStart.at(cur_start);
-    }
-    path.push_back(cur_start);
-    std::reverse(path.begin(), path.end()); 
-    while (cameFromGoal.find(cur_goal) != cameFromGoal.end()) {
-        path.push_back(cur_goal);
-        cur_goal = cameFromGoal.at(cur_goal);
-    }
-    path.push_back(cur_goal);
-    return path;
-}
-
-std::vector<Node> BiAStar(const Graph &graph, const Node &start, const Node &goal)
-{
-    if (!graph.containsNode(start) || !graph.containsNode(goal)) {
-        throw std::runtime_error("Start or goal node not found in graph.");
-    }
-
-    // Priority queue for A* search
-    using QueueItem = std::pair<double, Node>;
-
-    std::priority_queue<QueueItem, std::vector<QueueItem>, std::greater<>> openSetStart;
-    openSetStart.push({0, start});
-
-    std::priority_queue<QueueItem, std::vector<QueueItem>, std::greater<>> openSetGoal;
-    openSetGoal.push({0, goal});
-
-    std::map<Node, Node> cameFromStart, cameFromGoal;
-    std::map<Node, double> gScoreStart, gScoreGoal;
-    std::map<Node, double> fScoreStart, fScoreGoal;
-
-    for (const auto &node : graph.adjList) {
-        gScoreStart[node.first] = std::numeric_limits<double>::infinity();
-        fScoreStart[node.first] = std::numeric_limits<double>::infinity();
-    }
-
-    for (const auto &node : graph.rev_adjList) {
-        gScoreGoal[node.first] = std::numeric_limits<double>::infinity();
-        fScoreGoal[node.first] = std::numeric_limits<double>::infinity();
-    }
-
-    gScoreStart[start] = 0;
-    gScoreGoal[goal] = 0;
-
-    fScoreStart[start] = calculate_distance(start, goal);
-    fScoreGoal[goal] = calculate_distance(goal, start);
-
-    Node current_start = start, current_goal = goal;
-
-    while (!openSetGoal.empty() && !openSetStart.empty()) {
-        if (!openSetStart.empty()) {
-            current_start = openSetStart.top().second;
-            openSetStart.pop();
-            if (current_start == current_goal) {
-                return constructPath(cameFromStart, current_start, cameFromGoal, current_goal);
-            }
-            for (const Node &neighbor : graph.getNeighbors(current_start)) {
-                double t = gScoreStart[current_start] + graph.distances.at({current_start, neighbor});
-                // double t = gScoreStart[current_start] + calculate_weighted_distance(current_start, neighbor);
-                if (t < gScoreStart[neighbor]) {
-                    cameFromStart[neighbor] = current_start;
-                    gScoreStart[neighbor] = t;
-                    fScoreStart[neighbor] = gScoreStart[neighbor] + calculate_distance(neighbor, goal);
-                    openSetStart.push({fScoreStart[neighbor], neighbor});
-                }
-            }
-        }
-
-        if (!openSetGoal.empty()) {
-            current_goal = openSetGoal.top().second;
-            openSetGoal.pop();
-            if (current_goal == current_start) {
-                return constructPath(cameFromStart, current_start, cameFromGoal, current_goal);
-            }
-            for (const Node &neighbor : graph.rev_getNeighbors(current_goal)) {
-                double t = gScoreGoal[current_goal] + graph.distances.at({neighbor, current_goal});
-                // double t = gScoreStart[current_start] + calculate_weighted_distance(neighbor, current_goal);
-                if (t < gScoreGoal[neighbor]) {
-                    cameFromGoal[neighbor] = current_goal;
-                    gScoreGoal[neighbor] = t;
-                    fScoreGoal[neighbor] = gScoreGoal[neighbor] + calculate_distance(neighbor, start);
-                    openSetGoal.push({fScoreGoal[neighbor], neighbor});
-                }
-            }
-        }
-    }
-
-    // Return an empty path if no path found
-    return {};
-}
-
 
 void export_path_to_geojson_string(const std::vector<Node> &path, std::string &output_string) {
     Json::Value geojson;
@@ -373,7 +220,7 @@ void calculate_shortest_path_by_name(const Graph &graph, const string &start_nam
     cout << start_name << ":" << start.getLat() << "," << start.getLng() << endl;
     cout << goal_name << ":" << goal.getLat() << "," << goal.getLng() << endl;
 
-    auto path = BiAStar(graph, start, goal);
+    auto path = graph.AStar(start, goal);
 
     string export_path = working_path + "/public/shortest_path.geojson";
     export_path_to_geojson(path, export_path);
@@ -393,7 +240,7 @@ void calculate_shortest_path_by_name_to_string(const Graph &graph, const string 
     cout << start_name << ":" << start.getLat() << "," << start.getLng() << endl;
     cout << goal_name << ":" << goal.getLat() << "," << goal.getLng() << endl;
 
-    auto path = BiAStar(graph, start, goal);
+    auto path = graph.AStar(start, goal);
 
     export_path_to_geojson_string(path, output_string);
 }
@@ -439,7 +286,7 @@ void performArbitrary(double startLat, double startLng, double endLat, double en
     cout << start.getLat() << "," << start.getLng() << endl;
     cout << end.getLat() << "," << end.getLng() << endl;
 
-    auto path = BiAStar(graph, start, end);
+    auto path = graph.AStar(start, end);
 
     string result;
     export_path_to_geojson_string(path, result);

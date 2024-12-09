@@ -20,6 +20,22 @@ enum priority {
     footway = 6000,
 };
 
+// enum priority {
+//     unknown = 100,
+//     motorway = 100,
+//     trunk = 100,
+//     primary = 100,
+//     secondary = 100,
+//     tertiary = 100,
+//     unclassified = 100,
+//     residential = 100,
+//     service = 100,
+//     track = 100,
+//     path = 100,
+//     cycleway = 100,
+//     footway = 100,
+// };
+
 class Node
 {
     friend double calculate_distance(const Node& node1, const Node &node2); 

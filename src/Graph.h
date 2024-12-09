@@ -78,7 +78,11 @@ public:
     inline bool location_mapContains(const std::string &name) {
         return location_map.count(name);
     }
-    
+
+    std::vector<Node> AStar(const Node &start, const Node &goal) const;
+
+    std::vector<Node> BiAStar(const Node &start, const Node &dst) const;
+
 private:
     std::map<Node, std::set<Node>> adjList;  
 
