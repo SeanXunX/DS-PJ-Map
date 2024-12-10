@@ -12,8 +12,6 @@
 #include <array>
 
 class Graph {
-    friend std::vector<Node> AStar(const Graph &graph, const Node &start, const Node &goal);
-    friend std::vector<Node> BiAStar(const Graph &graph, const Node &start, const Node &goal);
 public:
     void addNode(const Node& node) {
         rev_adjList[node];
@@ -96,7 +94,3 @@ private:
 
     KDTree kdtree;
 };
-
-std::vector<Node> AStar(const Graph &graph, const Node &start, const Node &goal);
-std::vector<Node> BiAStar(const Graph &graph, const Node &start, const Node &goal);
-

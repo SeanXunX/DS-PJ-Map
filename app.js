@@ -53,15 +53,20 @@ app.use(express.json());
 app.post('/calculate-path', (req, res) => {
   try {
 
-    const { startLocation, endLocation } = req.body;
+    const { startLocation, endLocation, type } = req.body;
 
     if (!startLocation || !endLocation) {
       return res.status(400).send({ error: 'Start and end required' });
     }
 
-    console.log('Received request to calculate path from:', startLocation, 'to:', endLocation);
+    console.log('Received request to calculate path from:', startLocation, 'to:', endLocation, 'type:', type);
 
-    const request = JSON.stringify({ queryType: 'path', startLocation, endLocation });
+    let request = JSON.stringify();
+    if (type == "car") {
+      request = JSON.stringify({ queryType: 'path', startLocation, endLocation });
+    } else if (type == "ped") {
+      request = JSON.stringify({ queryType: 'ped_path', startLocation, endLocation });
+    }
 
     cppSocket.send(request, (err) => {
       if (err) {

@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   var map = L.map('map').setView([31.300917, 121.497785], 15);
 
+
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -87,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   let route = null;
+  let type = "";
 
   function updateMap(geojson) {
 
@@ -116,13 +118,18 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (type == "") {
+      alert('Please choose a traffic mode!')
+      return;
+    }
+
     try {
       const response = await fetch('/calculate-path', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ startLocation: startName, endLocation: endName }),
+        body: JSON.stringify({ startLocation: startName, endLocation: endName, type: type }),
       });
 
       const result = await response.json();
@@ -193,4 +200,25 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  const buttons = document.querySelectorAll(".btn-group .btn");
+
+  buttons.forEach(button => {
+    button.addEventListener("click", () => {
+      buttons.forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      const mode = button.getAttribute("data-mode");
+      if (mode == "car") {
+        type = "car";
+      } else {
+        type = "ped";
+      }
+      console.log("Selected mode:", mode);
+      console.log(`Now type = ${type}`)
+    });
+  });
 });    
+
+
+

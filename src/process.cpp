@@ -83,6 +83,13 @@ inline bool isOneWay(const Json::Value &feature) {
     return false;
 }
 
+inline bool isSideWalk(const Json::Value &feature) {
+    if (!feature["properties"]["sidewalk"].isNull() && feature["properties"]["sidewalk"].asString() == "no") {
+        return false;
+    }
+    return true;
+}
+
 // add highway to graph
 void load_highway(const std::string &filename, Graph &graph)
 {
@@ -118,6 +125,51 @@ void load_highway(const std::string &filename, Graph &graph)
                 }
                 if (!is_one_way && !graph.getNeighbors(n2).count(n1)) {
                     double distance = calculate_weighted_distance(n2, n1);
+                    graph.addDirectedEdge(n2, n1, distance);
+                }
+            }
+        } 
+    }
+}
+
+void ped_load_highway(const std::string &filename, Graph &graph)
+{
+    std::ifstream file(filename);
+    Json::Value geojson;
+    file >> geojson;
+
+    for (const auto &feature : geojson["features"])
+    {
+        if (feature["geometry"]["type"].asString() == "LineString" && !feature["properties"]["highway"].isNull())
+        {
+            const auto &coordinates = feature["geometry"]["coordinates"];
+            const string road_cat = feature["properties"]["highway"].asString();
+            bool is_one_way = false;
+            bool is_sidewalk = isSideWalk(feature);
+            if (!is_sidewalk) {
+                continue;
+            }
+            for (Json::ArrayIndex i = 0; i < coordinates.size() - 1; ++i)
+            {
+                double lng1 = coordinates[i][0].asDouble();
+                double lat1 = coordinates[i][1].asDouble();
+                double lng2 = coordinates[i + 1][0].asDouble();
+                double lat2 = coordinates[i + 1][1].asDouble();
+
+                Node n1(lng1, lat1), n2(lng2, lat2);
+
+                graph.addNode(n1);
+                graph.addNode2KDTree(n1);
+                graph.addNode(n2);
+                graph.addNode2KDTree(n2);
+
+                if (!graph.getNeighbors(n1).count(n2))
+                {
+                    double distance = calculate_distance(n1, n2);
+                    graph.addDirectedEdge(n1, n2, distance);
+                }
+                if (!is_one_way && !graph.getNeighbors(n2).count(n1)) {
+                    double distance = calculate_distance(n2, n1);
                     graph.addDirectedEdge(n2, n1, distance);
                 }
             }
@@ -305,11 +357,24 @@ void loadData(Graph &graph) {
     }
 }
 
+void ped_loadData(Graph &graph) {
+    string binaryFilename = working_path + "/bin/ped_graph_cache.bin";
+    if (!loadGraph(graph, binaryFilename)) {
+        cout << "Loading from geojson and building graph" << endl;
+        ped_load_highway(highway_file, graph);
+        load_point(point_file, graph);
+        saveGraph(graph, binaryFilename);
+    } else {
+        cout << "Graph loaded from binary cache." << endl;
+    }
+}
+
 int main()
 {
     // Load graph
-    Graph graph;
+    Graph graph, ped_graph;
     loadData(graph);
+    ped_loadData(ped_graph);
 
 
     server wsServer;
@@ -343,6 +408,12 @@ int main()
                     double endLng = jsonData["endLocation"]["lng"].asDouble();
                     std::cout << "Arbitrary two points:" << startLat << "," << startLng << "->" << endLat << "," << endLng << std::endl;
                     performArbitrary(startLat, startLng, endLat, endLng, hdl, wsServer, graph);
+                } else if (queryType == "ped_path") {
+                    std::string startLocation = jsonData["startLocation"].asString();
+                    std::string endLocation = jsonData["endLocation"].asString();
+
+                    std::cout << "Path query: " << startLocation << " -> " << endLocation << std::endl;
+                    calculateAndRespond(startLocation, endLocation, hdl, wsServer, ped_graph);
                 }
             } else {
                 std::cerr << "Failed to parse JSON: " << reader.getFormattedErrorMessages() << std::endl;
