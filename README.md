@@ -53,6 +53,5 @@ node app.js
 
   [rapidfuzz](https://github.com/rapidfuzz/rapidfuzz-cpp)
 
-### Todo list 
-- [ ] Render my own tile using Mapnik. (Now using leaflet's openstreetmap.)
+- Render my own tiles using Mapnik. (pre-rendered) 
 
