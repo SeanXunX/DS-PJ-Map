@@ -11,3 +11,9 @@ node_modules
 build
 
 bin
+
+/render/*
+
+!/render/file.xml
+
+!/render/main.py
