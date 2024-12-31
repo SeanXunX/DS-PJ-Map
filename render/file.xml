@@ -5,7 +5,7 @@
         <StyleName>geojson-style</StyleName>
         <Datasource>
             <Parameter name="type">geojson</Parameter>
-            <Parameter name="file">shanghai-highway.geojson</Parameter>
+            <Parameter name="file">../data/shanghai-highway.geojson</Parameter>
         </Datasource>
     </Layer>
 

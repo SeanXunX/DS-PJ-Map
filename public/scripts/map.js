@@ -2,11 +2,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   var map = L.map('map').setView([31.300917, 121.497785], 15);
 
-
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // 创建两个图层
+  var osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(map);
+  });
+
+  var localTileLayer = L.tileLayer('/rendering/tiles/{z}/{x}/{y}.png', {
+    attribution: '&copy; ds_pj by Sean',
+    tileSize: 256,
+    zoomOffset: 0,
+    minZoom: 0,
+    maxZoom: 17,
+    tms: false
+  });
+
+  // 默认添加一个图层到地图
+  osmLayer.addTo(map);
+
+  // 定义当前活动图层变量
+  var currentLayer = osmLayer;
+
+  // 创建切换按钮
+  var layerToggleButton = L.control({ position: 'bottomright' });
+  layerToggleButton.onAdd = function () {
+    var div = L.DomUtil.create('div', 'layer-toggle-button');
+    div.innerHTML = '<button id="toggleLayerButton">Switch Layer</button>';
+    return div;
+  };
+  layerToggleButton.addTo(map);
+
+  // 切换图层逻辑
+  document.getElementById('toggleLayerButton').addEventListener('click', function () {
+    if (currentLayer === osmLayer) {
+      map.removeLayer(osmLayer);
+      localTileLayer.addTo(map);
+      currentLayer = localTileLayer;
+    } else {
+      map.removeLayer(localTileLayer);
+      osmLayer.addTo(map);
+      currentLayer = osmLayer;
+    }
+  });
+
 
   const fetchSearchResults = async (query) => {
     try {
@@ -99,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     route = L.geoJSON(geojson, {
       style: function (feature) {
         return {
-          color: "#6688ff",
+          color: "#7CFC00",
           weight: 10
         };
       }
@@ -149,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let startPoint = null;
   let endPoint = null;
-  
+
   let startMarker = null;
   let endMarker = null;
 
@@ -165,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!startPoint) {
       startPoint = e.latlng;
       startMarker = L.marker(startPoint).addTo(map).bindPopup("Start Point").openPopup();
-      
+
     }
     // 如果起点已选择，选择为终点
     else if (!endPoint) {
@@ -218,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log(`Now type = ${type}`)
     });
   });
-});    
+});
 
 
 

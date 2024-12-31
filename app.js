@@ -30,8 +30,7 @@ const path = require('path');
 const { error } = require('console');
 app.use('/map', express.static(path.join(__dirname, "public")));
 
-// app.use(express.static('public'));
-
+app.use('/rendering', express.static(path.join(__dirname, "render")));
 
 const cppSocket = new WebSocket('ws://localhost:3002');
 

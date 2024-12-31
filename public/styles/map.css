@@ -117,3 +117,15 @@ body {
     color: #13bc57;
     z-index: 60;
 }
+
+.layer-toggle-button button {
+    background-color: white;
+    border: 1px solid gray;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+.layer-toggle-button button:hover {
+    background-color: lightgray;
+}
