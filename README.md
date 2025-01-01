@@ -98,14 +98,14 @@ Can choose different traffic methods. (Only <kbd>Car</kbd> and <kbd>Walk</kbd> a
 
 ![walk](./pics/fd_park_walk.png)
 
-From `复旦大学` to `杨浦公园`, we get differnt ways using different traffic methods.
+From `复旦大学` to `杨浦公园`, we get differnt ways using different traffic methods. The tragedy used is described at the next section.
 
 
-(Must choose a method after enter origin and destination. Otherwise, there will be an alert.)
+(Must choose a method after entering origin and destination. Otherwise, there will be an alert.)
 
 #### Improved real life shortest way algorithm  
 
-When driving a car to travel around, we often take priority of express ways and motor way although it has longer absolute distance. To implement this, roads are classified into different types according to the real life driving speed, which is used in the A* algorithm.
+When driving a car to travel around, we often take priority of express ways and motor ways although they may have longer absolute distance. To implement this, roads are classified into different types according to the real life driving speed, which is used in the A* algorithm.
 
 Example is shown in the above section.
 
